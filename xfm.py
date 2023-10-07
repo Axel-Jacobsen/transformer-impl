@@ -63,12 +63,21 @@ class Tokenizer(Dataset):
     def vocab_size(self) -> int:
         return len(self._tokens)
 
+    def max_size(self) -> int:
+        return self._max_len + 1
+
 
 class Transformer(nn.Module):
-    def __init__(self, vocab_size: int, embedding_dimension_size: int) -> None:
+    def __init__(
+        self, vocab_size: int, max_sentence_size: int, embedding_dimension_size: int
+    ) -> None:
         super().__init__()
         self._vocab_size = vocab_size
+        # transposed compared to "formal algorithms"
         self._W_embedding = nn.Linear(vocab_size, embedding_dimension_size, bias=False)
+        self._W_positional = nn.Linear(
+            embedding_dimension_size, max_sentence_size, bias=False
+        )
 
     def token_embedding(self, tokens: torch.Tensor) -> torch.Tensor:
         """
@@ -81,23 +90,23 @@ class Transformer(nn.Module):
             nn.functional.one_hot(tokens, self._vocab_size).float()
         )
 
-    def get_embedding(self, token: int) -> torch.Tensor:
-        """
-        Get
-        """
-        return self._W_embedding.weight[:, token]
+    def positional_embedding(self) -> torch.Tensor:
+        # this OK?
+        return self._W_positional.weight
 
-    def positional_embedding(self):
-        pass
+    def embed(self, tokens: torch.Tensor) -> torch.Tensor:
+        print(f"{self.token_embedding(tokens).shape=} {self.positional_embedding().shape=}")
+        return self.token_embedding(tokens) + self.positional_embedding()
 
 
 if __name__ == "__main__":
     data_path = Path("canterbury_tales.txt")
     tokenizer = Tokenizer(data_path)
-    transformer = Transformer(tokenizer.vocab_size(), 128)
+    transformer = Transformer(tokenizer.vocab_size(), tokenizer.max_size(), 128)
     print(f"vocab size: {tokenizer.vocab_size()}")
 
     batch = tokenizer[100:110]
     print(f"{batch.shape=}")
     ret = transformer.token_embedding(batch)
     print(f"token embedding {ret.shape=}")
+    print(f"{transformer.embed(batch).shape=}")
