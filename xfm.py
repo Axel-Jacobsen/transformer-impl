@@ -80,22 +80,25 @@ class Transformer(nn.Module):
         )
 
     def token_embedding(self, tokens: torch.Tensor) -> torch.Tensor:
-        """
-        Token embedding of a sequence of tokens
+        """ Token embedding of a sequence of tokens
 
         Tokens should be a tensor of shape (batch_size, sequence_length)
-        Returns a shape of (batch_size, sequence_length, embedding_dimension_size)
+        Returns a shape of
+            (batch_size, sequence_length, embedding_dimension_size)
         """
         return self._W_embedding(
             nn.functional.one_hot(tokens, self._vocab_size).float()
         )
 
     def positional_embedding(self) -> torch.Tensor:
-        # this OK?
+        """ Positional embedding of a sequence of tokens
+        """
         return self._W_positional.weight
 
     def embed(self, tokens: torch.Tensor) -> torch.Tensor:
-        print(f"{self.token_embedding(tokens).shape=} {self.positional_embedding().shape=}")
+        """
+        Embed a sequence of tokens
+        """
         return self.token_embedding(tokens) + self.positional_embedding()
 
 
@@ -106,7 +109,7 @@ if __name__ == "__main__":
     print(f"vocab size: {tokenizer.vocab_size()}")
 
     batch = tokenizer[100:110]
-    print(f"{batch.shape=}")
+    print(f"sentence shape is {batch.shape=}")
     ret = transformer.token_embedding(batch)
     print(f"token embedding {ret.shape=}")
     print(f"{transformer.embed(batch).shape=}")
