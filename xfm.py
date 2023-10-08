@@ -58,21 +58,17 @@ class Transformer(nn.Module):
         self, token: torch.Tensor, context: list[torch.Tensor]
     ) -> torch.Tensor:
         """Very Very basic attention"""
+        print(token, context[-1])
         embedding = self.embed(token)
         embedded_context = [self.embed(t) for t in context]
-
-        print(f"{embedding.shape=}")
-        print(f"{embedded_context[0].shape=}, {len(embedded_context)=}")
 
         q = self._W_query(embedding)
         k = torch.stack([self._W_key(t) for t in embedded_context])
         v = torch.stack([self._W_value(t) for t in embedded_context])
 
-        print(f"{q.shape=} {k.shape=} {v.shape=}")
         alpha = torch.softmax(
             torch.matmul(q, k.mT) / self._attention_dimension_size ** (1 / 2), dim=-1
         )
-        print(f'{alpha.shape=}')
 
         return torch.matmul(alpha, v)
 
@@ -92,6 +88,7 @@ if __name__ == "__main__":
     print(f"vocab size: {tokenizer.vocab_size()}")
 
     batch = tokenizer[100 : 100 + batch_size]
+    print(tokenizer._data[100])
 
     print(f"sentence shape is {batch.shape=}")
 
