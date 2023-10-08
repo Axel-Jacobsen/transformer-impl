@@ -138,7 +138,8 @@ class MultiHeadAttention(nn.Module):
         self._W_value = [
             nn.Linear(mid_dim_size, embedding_dimension_size) for _ in range(num_heads)
         ]
-        self._W0 = nn.Linear(self._out_dimension_size, num_heads * mid_dim_size)
+        # have to transpose this one too
+        self._W0 = nn.Linear(num_heads * mid_dim_size, self._out_dimension_size)
 
     def token_embedding(self, tokens: torch.Tensor) -> torch.Tensor:
         """Token embedding of a sequence of tokens
@@ -174,6 +175,7 @@ class MultiHeadAttention(nn.Module):
         embedding = self.embed(X)
         embedded_context = self.embed(Z)
 
+        print(f"{embedding.shape=}")
         outs = torch.cat(
             [
                 self._attention(
@@ -185,8 +187,11 @@ class MultiHeadAttention(nn.Module):
                     mask=mask,
                 )
                 for h in range(self._num_heads)
-            ]
+            ], dim=1
         )
+        print(f"{self._W0=}")
+        print(f"{outs.shape=}")
+
         return self._W0(outs)
 
     def forward(self, x, z, mask=None):
