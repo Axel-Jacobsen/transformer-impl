@@ -7,7 +7,7 @@ from torch import nn
 
 from pathlib import Path
 
-from shitty_tokenizer import Tokenizer
+from tokenizer import Tokenizer
 
 
 class Transformer(nn.Module):
@@ -51,31 +51,35 @@ class Transformer(nn.Module):
         return self._W_positional.weight
 
     def embed(self, tokens: torch.Tensor) -> torch.Tensor:
-        """
-        Embed a sequence of tokens
-        """
+        """Embed a sequence of tokens"""
         return self.token_embedding(tokens) + self.positional_embedding()
 
-    def basic_attention(self, tokens: torch.Tensor) -> torch.Tensor:
-        """TODO how to integrate context??
-        should it be
-            basic_attention(
-                self,
-                tokens: torch.Tensor,
-                context: torch.Tensor
-            )
-        """
-        embedding = self.embed(tokens)
+    def basic_attention(
+        self, token: torch.Tensor, context: list[torch.Tensor]
+    ) -> torch.Tensor:
+        """Very Very basic attention"""
+        embedding = self.embed(token)
+        embedded_context = [self.embed(t) for t in context]
+
+        print(f"{embedding.shape=}")
+        print(f"{embedded_context[0].shape=}, {len(embedded_context)=}")
 
         q = self._W_query(embedding)
-        k = self._W_key(embedding)
+        k = torch.stack([self._W_key(t) for t in embedded_context])
+        v = torch.stack([self._W_value(t) for t in embedded_context])
 
-        return embedding
+        print(f"{q.shape=} {k.shape=} {v.shape=}")
+        alpha = torch.softmax(
+            torch.matmul(q, k.mT) / self._attention_dimension_size ** (1 / 2), dim=-1
+        )
+        print(f'{alpha.shape=}')
+
+        return torch.matmul(alpha, v)
 
 
 if __name__ == "__main__":
     data_path = Path("canterbury_tales.txt")
-    tokenizer = Tokenizer(data_path)
+    tokenizer = Tokenizer(data_path, pad=True)
     transformer = Transformer(
         tokenizer.vocab_size(),
         tokenizer.max_size(),
@@ -83,10 +87,15 @@ if __name__ == "__main__":
         attention_dimension_size=128,
         out_dimension_size=128,
     )
-    batch_size = 16
+    batch_size = 1
+
     print(f"vocab size: {tokenizer.vocab_size()}")
+
     batch = tokenizer[100 : 100 + batch_size]
+
     print(f"sentence shape is {batch.shape=}")
+
     ret = transformer.token_embedding(batch)
-    print(f"token embedding {ret.shape=}")
-    print(f"{transformer.embed(batch).shape=}")
+
+    fin = transformer.basic_attention(batch[0, 11], list(batch[0, :11]))
+    print(f"{fin.shape=}")
