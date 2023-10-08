@@ -10,6 +10,11 @@ from pathlib import Path
 from tokenizer import Tokenizer
 
 
+"""
+working through formal algorithms for transformers
+"""
+
+
 class Transformer(nn.Module):
     def __init__(
         self,
@@ -26,7 +31,8 @@ class Transformer(nn.Module):
         self._attention_dimension_size = attention_dimension_size
         self._out_dimension_size = out_dimension_size
 
-        # transposed compared to "formal algorithms"
+        # w_embedding transposed compared to "formal algorithms" since we have
+        # to apply the function differently
         self._W_embedding = nn.Linear(vocab_size, embedding_dimension_size, bias=False)
         self._W_positional = nn.Linear(
             embedding_dimension_size, max_sentence_size, bias=False
@@ -54,7 +60,7 @@ class Transformer(nn.Module):
         """Embed a sequence of tokens"""
         return self.token_embedding(tokens) + self.positional_embedding()
 
-    def basic_attention(
+    def basic_single_query_attention(
         self, token: torch.Tensor, context: list[torch.Tensor]
     ) -> torch.Tensor:
         """Very Very basic attention"""
@@ -64,12 +70,29 @@ class Transformer(nn.Module):
         q = self._W_query(embedding)
         k = torch.stack([self._W_key(t) for t in embedded_context])
         v = torch.stack([self._W_value(t) for t in embedded_context])
+        s = q @ k.mT / self._attention_dimension_size ** (1 / 2)
 
-        alpha = torch.softmax(
-            torch.matmul(q, k.mT) / self._attention_dimension_size ** (1 / 2), dim=-1
-        )
+        alpha = torch.softmax(s, dim=-1)
 
         return torch.matmul(alpha, v)
+
+    def attention(self, X, Z, mask=None):
+        """Computes a single (masked) self- or cross- attention head
+
+        (from Formal Algorithms)
+        """
+        embedding = self.embed(X)
+        embedded_context = self.embed(Z)
+
+        Q = self._W_query(embedding)
+        K = self._W_key(embedded_context)
+        V = self._W_value(embedded_context)
+        S = K.mT @ Q / self._attention_dimension_size ** (1 / 2)
+
+        if mask is not None:
+            assert mask.shape == S.shape, f"{mask.shape=} {S.shape=}, should be same"
+            S = S.masked_fill(mask, -1e9)
+        return V @ torch.softmax(S, dim=-1)
 
 
 if __name__ == "__main__":
@@ -93,5 +116,8 @@ if __name__ == "__main__":
 
     ret = transformer.token_embedding(batch)
 
-    fin = transformer.basic_attention(batch[0, 11], list(batch[0, :11]))
-    print(f"{fin.shape=}")
+    fin_basic = transformer.basic_single_query_attention(
+        batch[0, 11], list(batch[0, :11])
+    )
+    fin_normal = transformer.attention(batch[0], batch[0])
+    print(f"{fin_normal.shape=}")

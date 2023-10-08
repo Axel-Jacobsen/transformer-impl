@@ -62,9 +62,7 @@ class Tokenizer(Dataset):
         data = [self._token2idx[t] for t in self._data[idx]]
         data += [self._token2idx["<eos>"]]
         if pad:
-            data += [self._token2idx["<pad>"]] * (
-                self._max_len - len(self._data[idx])
-            )
+            data += [self._token2idx["<pad>"]] * (self._max_len - len(self._data[idx]))
         return torch.tensor(data)
 
     def get_tokens(self) -> list[str]:
