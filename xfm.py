@@ -17,18 +17,23 @@ class Transformer(nn.Module):
         max_sentence_size: int,
         embedding_dimension_size: int,
         attention_dimension_size: int,
+        out_dimension_size: int,
     ) -> None:
         super().__init__()
         self._vocab_size = vocab_size
         self._max_sentence_size = max_sentence_size
         self._embedding_dimension_size = embedding_dimension_size
         self._attention_dimension_size = attention_dimension_size
+        self._out_dimension_size = out_dimension_size
 
         # transposed compared to "formal algorithms"
         self._W_embedding = nn.Linear(vocab_size, embedding_dimension_size, bias=False)
         self._W_positional = nn.Linear(
             embedding_dimension_size, max_sentence_size, bias=False
         )
+        self._W_query = nn.Linear(embedding_dimension_size, attention_dimension_size)
+        self._W_key = nn.Linear(embedding_dimension_size, attention_dimension_size)
+        self._W_value = nn.Linear(out_dimension_size, embedding_dimension_size)
 
     def token_embedding(self, tokens: torch.Tensor) -> torch.Tensor:
         """Token embedding of a sequence of tokens
@@ -52,7 +57,18 @@ class Transformer(nn.Module):
         return self.token_embedding(tokens) + self.positional_embedding()
 
     def basic_attention(self, tokens: torch.Tensor) -> torch.Tensor:
+        """TODO how to integrate context??
+        should it be
+            basic_attention(
+                self,
+                tokens: torch.Tensor,
+                context: torch.Tensor
+            )
+        """
         embedding = self.embed(tokens)
+
+        q = self._W_query(embedding)
+        k = self._W_key(embedding)
 
         return embedding
 
@@ -65,6 +81,7 @@ if __name__ == "__main__":
         tokenizer.max_size(),
         embedding_dimension_size=128,
         attention_dimension_size=128,
+        out_dimension_size=128,
     )
     batch_size = 16
     print(f"vocab size: {tokenizer.vocab_size()}")
