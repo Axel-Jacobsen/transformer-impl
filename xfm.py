@@ -58,7 +58,6 @@ class Transformer(nn.Module):
         self, token: torch.Tensor, context: list[torch.Tensor]
     ) -> torch.Tensor:
         """Very Very basic attention"""
-        print(token, context[-1])
         embedding = self.embed(token)
         embedded_context = [self.embed(t) for t in context]
 
