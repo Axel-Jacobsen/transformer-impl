@@ -122,21 +122,21 @@ class MultiHeadAttention(nn.Module):
             for _ in range(num_heads)
         ]
         self._W_value = [
-            nn.Linear(mid_dimension_size, embedding_dimension_size)
+            nn.Linear(embedding_dimension_size, mid_dimension_size)
             for _ in range(num_heads)
         ]
         # have to transpose this one too
         self._W0 = nn.Linear(num_heads * mid_dimension_size, self._out_dimension_size)
 
     def _attention(self, embedding, embedded_context, Q, K, V, mask=None):
-        q = Q(embedding)
-        k = K(embedded_context)
-        v = V(embedded_context)
+        q = Q(embedding.T).T
+        k = K(embedded_context.T).T
+        v = V(embedded_context.T).T
         s = k.mT @ q / self._attention_dimension_size ** (1 / 2)
 
         if mask is not None:
             assert mask.shape == s.shape, f"{mask.shape=} {s.shape=}, should be same"
-            s = s.masked_fill(mask, -1e9)
+            s *= mask
 
         return v @ torch.softmax(s, dim=-1)
 
@@ -154,9 +154,9 @@ class MultiHeadAttention(nn.Module):
                     )
                     for h in range(self._num_heads)
                 ],
-                dim=1,
+                dim=0,
             )
-        )
+        ).T
 
     def forward(self, x, z, mask=None):
         return self.multihead_attention(x, z, mask=mask)

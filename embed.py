@@ -15,9 +15,10 @@ class Embedding(nn.Module):
         self._max_sentence_size = max_sentence_size
         self._embedding_dimension_size = embedding_dimension_size
 
-        self._W_embedding, self._W_positional = (
+        self._W_embedding, self._W_positional, self._W_unembed = (
             nn.Linear(vocab_size, embedding_dimension_size, bias=False),
             nn.Linear(embedding_dimension_size, max_sentence_size, bias=False),
+            nn.Linear(embedding_dimension_size, vocab_size, bias=False),
         )
 
     @property
@@ -49,17 +50,11 @@ class Embedding(nn.Module):
 
     def embed(self, tokens: torch.Tensor) -> torch.Tensor:
         """Embed a sequence of tokens"""
-        print(f"{self.token_embedding(tokens).shape=} + {self.positional_embedding().shape=}")
-        return self.token_embedding(tokens) + self.positional_embedding()
+        return (self.token_embedding(tokens) + self.positional_embedding()).T
 
     def unembed(self, embedded_tokens: torch.Tensor) -> torch.Tensor:
-        """Unembed a sequence of tokens
-
-        We can make this it's own learned layer, but you can also
-        just transpose the embedding matrix and multiply it by the
-        embedded tokens. Easier, good 'nough for now
-        """
-        return embedded_tokens @ self._W_embedding.weight.mT
+        """Unembed a sequence of tokens"""
+        return self._W_unembed.weight @ embedded_tokens
 
     def forward(self, tokens: torch.tensor) -> torch.Tensor:
         return self.embed(tokens)

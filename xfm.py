@@ -11,6 +11,8 @@ from embed import Embedding
 from layer_norm import LayerNorm
 from attention import MultiHeadAttention, generate_square_subsequent_mask
 
+torch.autograd.set_detect_anomaly(True)
+
 
 @dataclass
 class EmbeddingParams:
@@ -23,7 +25,7 @@ class EmbeddingParams:
 class MultiHeadAttentionParams:
     attention_dimension_size: int
     mid_dimension_size: int
-    out_dimension_size: int
+    out_dimension_size: int  # just hte embedding dim???
     num_heads: Optional[int] = None
 
 
@@ -74,16 +76,22 @@ class DTransformer(nn.Module):
 
         ugly!
         """
-        print("--- forward ---")
-        print(f"{x.shape=}")
         x = self.embedder(x)
         for l in range(self.num_layers):
+            print(f"{x=}")
+            print("a", x.shape)
             x = self.layer_norm[l][0](x)
+            print("b", x.shape)
             x += self.attention[l](x, x, mask=self.causal_mask)
+            print("c", x.shape)
             x = self.layer_norm[l][1](x)
-            x += self.mlp[l][1](self.gelu(self.mlp[l][0](x)))
+            print("d", x.shape)
+            x += self.mlp[l][1](self.gelu(self.mlp[l][0](x.T))).T
+            print("e", x.shape)
 
+        print(x)
         x = self.final_layer_norm(x)
+        print(f"{x.shape=}")
         x = self.embedder.unembed(x)
         return nn.functional.softmax(x, dim=-1)
 
@@ -95,7 +103,6 @@ if __name__ == "__main__":
 
     CONTEXT_WINDOW = 10
     VOCAB_SIZE = 3
-    print(f"{CONTEXT_WINDOW=} {VOCAB_SIZE=}")
 
     def tokenize(char: str) -> torch.Tensor:
         if char == "a":
@@ -115,11 +122,11 @@ if __name__ == "__main__":
             return "<eos>"
         raise RuntimeError(f"can't detokenize {tensor=}")
 
-    embedding_params = EmbeddingParams(VOCAB_SIZE, CONTEXT_WINDOW, 4)
+    embedding_params = EmbeddingParams(VOCAB_SIZE, CONTEXT_WINDOW, 3)
     attention_params = MultiHeadAttentionParams(
         attention_dimension_size=4,
-        mid_dimension_size=4,
-        out_dimension_size=4,
+        mid_dimension_size=5,
+        out_dimension_size=3,
         num_heads=2,
     )
 
@@ -133,16 +140,18 @@ if __name__ == "__main__":
     optimizer = torch.optim.Adam(transformer.parameters(), lr=0.001)
     criterion = nn.CrossEntropyLoss()
 
-    for _ in range(100):
+    for i in range(100):
         optimizer.zero_grad()
         x = torch.stack([tokenize(next(seq)) for _ in range(CONTEXT_WINDOW)])
-        y = torch.stack([tokenize(next(seq)) for _ in range(CONTEXT_WINDOW)])
-        y = y.argmax(dim=-1)
+        y = torch.clone(x)
+
+        print(x.shape)
         y_hat = transformer(x)
-        loss = criterion(y_hat, y)
+        print(y_hat, y)
+        loss = criterion(y_hat.T, y)
         loss.backward()
         optimizer.step()
-        print(loss.item())
+        print(f"{i=} {loss.item()=}")
 
     x = torch.stack([tokenize(next(seq)) for _ in range(CONTEXT_WINDOW)])
     transformer.eval()
