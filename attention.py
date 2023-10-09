@@ -17,9 +17,8 @@ class EmbeddingParams:
 
 @dataclass
 class AttentionParams:
-    embedding_params: EmbeddingParams
-    attention_dim_size: int
-    mid_dim_size: int
+    attention_dimension_size: int
+    mid_dimension_size: int
     out_dim_size: int
     num_heads: Optional[int] = None
 
@@ -98,14 +97,14 @@ class MultiHeadAttention(nn.Module):
         vocab_size: int,
         max_sentence_size: int,
         num_heads: int,
-        mid_dim_size: int,
+        mid_dimension_size: int,
         embedding_dimension_size: int,
         attention_dimension_size: int,
         out_dimension_size: int,
     ) -> None:
         super().__init__()
         self._num_heads = num_heads
-        self._mid_dim_size = mid_dim_size
+        self._mid_dimension_size = mid_dimension_size
         self._vocab_size = vocab_size
         self._max_sentence_size = max_sentence_size
         self._embedding_dimension_size = embedding_dimension_size
@@ -123,10 +122,11 @@ class MultiHeadAttention(nn.Module):
             for _ in range(num_heads)
         ]
         self._W_value = [
-            nn.Linear(mid_dim_size, embedding_dimension_size) for _ in range(num_heads)
+            nn.Linear(mid_dimension_size, embedding_dimension_size)
+            for _ in range(num_heads)
         ]
         # have to transpose this one too
-        self._W0 = nn.Linear(num_heads * mid_dim_size, self._out_dimension_size)
+        self._W0 = nn.Linear(num_heads * mid_dimension_size, self._out_dimension_size)
 
     def _attention(self, embedding, embedded_context, Q, K, V, mask=None):
         q = Q(embedding)

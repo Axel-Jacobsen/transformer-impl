@@ -16,15 +16,14 @@ from attention import MultiHeadAttention, generate_square_subsequent_mask
 class EmbeddingParams:
     vocab_size: int
     max_sentence_size: int
-    embedding_dim_size: int
+    embedding_dimension_size: int
 
 
 @dataclass
 class MultiHeadAttentionParams:
-    embedding_params: EmbeddingParams
-    attention_dim_size: int
-    mid_dim_size: int
-    out_dim_size: int
+    attention_dimension_size: int
+    mid_dimension_size: int
+    out_dimension_size: int
     num_heads: Optional[int] = None
 
 
@@ -42,19 +41,23 @@ class DTransformer(nn.Module):
         self.embedder = Embedding(**embedding_params.__dict__)
         self.layer_norm = [
             (
-                LayerNorm(embedding_params.embedding_dim_size),
-                LayerNorm(embedding_params.embedding_dim_size),
+                LayerNorm(embedding_params.embedding_dimension_size),
+                LayerNorm(embedding_params.embedding_dimension_size),
             )
             for _ in range(num_layers)
         ]
-        self.final_layer_norm = LayerNorm(embedding_params.embedding_dim_size)
+        self.final_layer_norm = LayerNorm(embedding_params.embedding_dimension_size)
         self.attention = [
-            MultiHeadAttention(**attention_params.__dict__) for _ in range(num_layers)
+            MultiHeadAttention(
+                **attention_params.__dict__,
+                **embedding_params.__dict__,
+            )
+            for _ in range(num_layers)
         ]
         self.mlp = [
             (
-                nn.Linear(embedding_params.embedding_dim_size, mlp_dim_size),
-                nn.Linear(mlp_dim_size, embedding_params.embedding_dim_size),
+                nn.Linear(embedding_params.embedding_dimension_size, mlp_dim_size),
+                nn.Linear(mlp_dim_size, embedding_params.embedding_dimension_size),
             )
             for _ in range(num_layers)
         ]
@@ -71,6 +74,8 @@ class DTransformer(nn.Module):
 
         ugly!
         """
+        print("--- forward ---")
+        print(f"{x.shape=}")
         x = self.embedder(x)
         for l in range(self.num_layers):
             x = self.layer_norm[l][0](x)
@@ -88,14 +93,58 @@ if __name__ == "__main__":
 
     seq = cycle("aab")
 
-    CONTEXT_WINDOW = 5
+    CONTEXT_WINDOW = 10
     VOCAB_SIZE = 3
+    print(f"{CONTEXT_WINDOW=} {VOCAB_SIZE=}")
 
     def tokenize(char: str) -> torch.Tensor:
         if char == "a":
-            return nn.functional.one_hot(torch.tensor(0), 3)
+            return torch.tensor(0)
         elif char == "b":
-            return nn.functional.one_hot(torch.tensor(1), 3)
+            return torch.tensor(1)
         elif char == "<eos>":
-            return nn.functional.one_hot(torch.tensor(2), 3)
+            return torch.tensor(2)
         raise RuntimeError(f"can't tokenize {char=}")
+
+    def detokenize(tensor: torch.Tensor) -> str:
+        if tensor.argmax() == 0:
+            return "a"
+        elif tensor.argmax() == 1:
+            return "b"
+        elif tensor.argmax() == 2:
+            return "<eos>"
+        raise RuntimeError(f"can't detokenize {tensor=}")
+
+    embedding_params = EmbeddingParams(VOCAB_SIZE, CONTEXT_WINDOW, 4)
+    attention_params = MultiHeadAttentionParams(
+        attention_dimension_size=4,
+        mid_dimension_size=4,
+        out_dimension_size=4,
+        num_heads=2,
+    )
+
+    transformer = DTransformer(
+        num_layers=2,
+        mlp_dim_size=4,
+        embedding_params=embedding_params,
+        attention_params=attention_params,
+    )
+
+    optimizer = torch.optim.Adam(transformer.parameters(), lr=0.001)
+    criterion = nn.CrossEntropyLoss()
+
+    for _ in range(100):
+        optimizer.zero_grad()
+        x = torch.stack([tokenize(next(seq)) for _ in range(CONTEXT_WINDOW)])
+        y = torch.stack([tokenize(next(seq)) for _ in range(CONTEXT_WINDOW)])
+        y = y.argmax(dim=-1)
+        y_hat = transformer(x)
+        loss = criterion(y_hat, y)
+        loss.backward()
+        optimizer.step()
+        print(loss.item())
+
+    x = torch.stack([tokenize(next(seq)) for _ in range(CONTEXT_WINDOW)])
+    transformer.eval()
+    y_hat = transformer(x)
+    print("".join([detokenize(y) for y in y_hat.argmax(dim=-1)]))
