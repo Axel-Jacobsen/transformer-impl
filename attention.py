@@ -2,8 +2,42 @@
 
 import torch
 
-
 from torch import nn
+
+from typing import Optional
+from dataclasses import dataclass
+
+
+@dataclass
+class EmbeddingParams:
+    vocab_size: int
+    max_sentence_size: int
+    embedding_dim_size: int
+
+
+@dataclass
+class AttentionParams:
+    embedding_params: EmbeddingParams
+    attention_dim_size: int
+    mid_dim_size: int
+    out_dim_size: int
+    num_heads: Optional[int] = None
+
+
+def generate_square_subsequent_mask(
+    sz: int,
+    device: torch.device = torch.device("cpu"),
+    dtype: torch.dtype = torch.get_default_dtype(),
+) -> torch.Tensor:
+    """Generate a square causal mask for the sequence. The masked positions are filled with float('-inf').
+    Unmasked positions are filled with float(0.0).
+
+    directly from https://pytorch.org/docs/stable/_modules/torch/nn/modules/transformer.html#Transformer.generate_square_subsequent_mask
+    """
+    return torch.triu(
+        torch.full((sz, sz), float("-inf"), dtype=dtype, device=device),
+        diagonal=1,
+    )
 
 
 class Attention(nn.Module):
@@ -29,7 +63,7 @@ class Attention(nn.Module):
     def basic_single_query_attention(
         self, embedding: torch.Tensor, embedded_context: list[torch.Tensor]
     ) -> torch.Tensor:
-        """Very Very basic attention"""
+        """very very basic attention"""
         q = self._W_query(embedding)
         k = torch.stack([self._W_key(t) for t in embedded_context])
         v = torch.stack([self._W_value(t) for t in embedded_context])
