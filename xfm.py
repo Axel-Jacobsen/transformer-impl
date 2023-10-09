@@ -98,7 +98,7 @@ class Attention(nn.Module):
         return V @ torch.softmax(S, dim=-1)
 
     def forward(self, x, z, mask=None):
-        return attention(x, z, mask=mask)
+        return self.attention(x, z, mask=mask)
 
 
 class MultiHeadAttention(nn.Module):
@@ -159,6 +159,7 @@ class MultiHeadAttention(nn.Module):
     def embed(self, tokens: torch.Tensor) -> torch.Tensor:
         """Embed a sequence of tokens"""
         return self.token_embedding(tokens) + self.positional_embedding()
+
     def _attention(self, embedding, embedded_context, Q, K, V, mask=None):
         q = Q(embedding)
         k = K(embedded_context)
@@ -166,7 +167,7 @@ class MultiHeadAttention(nn.Module):
         s = k.mT @ q / self._attention_dimension_size ** (1 / 2)
 
         if mask is not None:
-            assert mask.shape == S.shape, f"{mask.shape=} {s.shape=}, should be same"
+            assert mask.shape == s.shape, f"{mask.shape=} {s.shape=}, should be same"
             s = s.masked_fill(mask, -1e9)
 
         return v @ torch.softmax(s, dim=-1)
@@ -174,31 +175,28 @@ class MultiHeadAttention(nn.Module):
     def multihead_attention(self, X, Z, mask=None):
         embedding = self.embed(X)
         embedded_context = self.embed(Z)
-
-        print(f"{embedding.shape=}")
-        outs = torch.cat(
-            [
-                self._attention(
-                    embedding,
-                    embedded_context,
-                    self._W_query[h],
-                    self._W_key[h],
-                    self._W_value[h],
-                    mask=mask,
-                )
-                for h in range(self._num_heads)
-            ], dim=1
+        return self._W0(
+            torch.cat(
+                [
+                    self._attention(
+                        embedding,
+                        embedded_context,
+                        self._W_query[h],
+                        self._W_key[h],
+                        self._W_value[h],
+                        mask=mask,
+                    )
+                    for h in range(self._num_heads)
+                ],
+                dim=1,
+            )
         )
-        print(f"{self._W0=}")
-        print(f"{outs.shape=}")
-
-        return self._W0(outs)
 
     def forward(self, x, z, mask=None):
         return self.multihead_attention(x, z, mask=mask)
 
 
-if __name__ == "__main__":
+def basic_tests():
     data_path = Path("canterbury_tales.txt")
     tokenizer = Tokenizer(data_path, pad=True)
     attention = Attention(
@@ -217,11 +215,9 @@ if __name__ == "__main__":
 
     print(f"sentence shape is {batch.shape=}")
 
-    ret = attention.token_embedding(batch)
+    attention.token_embedding(batch)
 
-    fin_basic = attention.basic_single_query_attention(
-        batch[0, 11], list(batch[0, :11])
-    )
+    attention.basic_single_query_attention(batch[0, 11], list(batch[0, :11]))
     fin_normal = attention.attention(batch[0], batch[0])
     print(f"{fin_normal.shape=}")
 
@@ -237,3 +233,21 @@ if __name__ == "__main__":
 
     fin_mh = mh_attention(batch[0], batch[0])
     print(f"{fin_mh.shape=}")
+
+
+if __name__ == "__main__":
+    from itertools import cycle
+
+    seq = cycle("aab")
+
+    CONTEXT_WINDOW = 5
+    VOCAB_SIZE = 3
+
+    def tokenize(char: str) -> torch.Tensor:
+        if char == "a":
+            return torch.tensor(0)
+        elif char == "b":
+            return torch.tensor(1)
+        elif char == "<eos>":
+            return torch.tensor(2)
+        raise RuntimeError(f"can't tokenize {char=}")
