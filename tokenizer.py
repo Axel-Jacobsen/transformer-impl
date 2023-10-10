@@ -7,6 +7,10 @@ from typing import Union
 from pathlib import Path
 
 
+""" This is a dataset, not a tokenizer. Well, both.
+"""
+
+
 class Tokenizer(Dataset):
     def __init__(self, data_path: Path, pad: bool = False) -> None:
         with open(data_path, "r") as f:
@@ -24,7 +28,7 @@ class Tokenizer(Dataset):
                 "<pad>": len(raw_tokens) + 3,
             }
         )
-        self._data = raw_text.split("\n")
+        self._data = raw_text.lower().split("\n")
         self._max_len = max(len(line) for line in self._data)
 
     def __repr__(self) -> str:
@@ -72,4 +76,4 @@ class Tokenizer(Dataset):
         return len(self._tokens)
 
     def max_size(self) -> int:
-        return self._max_len + 1
+        return self._max_len

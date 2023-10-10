@@ -4,7 +4,6 @@ import torch
 
 from torch import nn
 
-from tqdm import tqdm
 
 from typing import Optional
 from dataclasses import dataclass
