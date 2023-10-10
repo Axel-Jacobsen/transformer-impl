@@ -37,15 +37,18 @@ class Tokenizer(Dataset):
     def __len__(self) -> int:
         return len(self._data)
 
-    def __getitem__(self, idx: Union[int, slice]) -> torch.Tensor:
-        if isinstance(idx, slice):
-            return torch.stack(
-                [
-                    self._get_item(i, pad=self.pad)
-                    for i in range(*idx.indices(len(self)))
-                ]
-            )
-        return self._get_item(idx)
+    def __getitem__(self, idx: int) -> tuple[torch.Tensor, torch.Tensor]:
+        """
+        Get a single item from the dataset
+        """
+        data = [self._token2idx["<bos>"]]
+        data += [self._token2idx[t] for t in self._data[idx]]
+        data += [self._token2idx["<eos>"]]
+
+        input_seq = torch.tensor(data[:-1])
+        target_seq = torch.tensor(data[1:])
+
+        return input_seq, target_seq
 
     @property
     def pad(self) -> bool:
@@ -54,21 +57,6 @@ class Tokenizer(Dataset):
     @pad.setter
     def pad(self, pad: bool) -> None:
         self._pad = pad
-
-    def _get_item(self, idx: int, pad: bool = False) -> torch.Tensor:
-        """
-        Get a single item from the dataset
-
-        Returns a tensor of shape (max_len + 1), with padding at the
-        end of the actual data, and an <eos> token at the end of the
-        sequence.
-        """
-        data = [self._token2idx["<bos>"]]
-        data += [self._token2idx[t] for t in self._data[idx]]
-        data += [self._token2idx["<eos>"]]
-        if pad:
-            data += [self._token2idx["<pad>"]] * (self._max_len - len(self._data[idx]))
-        return torch.tensor(data)
 
     def get_tokens(self) -> list[str]:
         return self._tokens
