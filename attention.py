@@ -23,8 +23,10 @@ class AttentionParams:
     num_heads: Optional[int] = None
 
 
-def generate_square_subsequent_mask(sz: int) -> torch.Tensor:
-    mask = torch.triu(torch.ones(sz, sz)) == 1
+def generate_square_subsequent_mask(
+    sz: int, device: torch.device = torch.device("cpu")
+) -> torch.Tensor:
+    mask = torch.triu(torch.ones(sz, sz, device=device)) == 1
     return (
         mask.float().masked_fill(mask == 0, 0.0).masked_fill(mask == 1, float("-inf"))
     )
