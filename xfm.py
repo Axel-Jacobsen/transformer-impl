@@ -123,8 +123,8 @@ if __name__ == "__main__":
     )
 
     transformer = DTransformer(
-        num_layers=2,
-        mlp_dim_size=4,
+        num_layers=4,
+        mlp_dim_size=8,
         embedding_params=embedding_params,
         attention_params=attention_params,
     )
