@@ -43,8 +43,10 @@ class DTransformer(nn.Module):
         self.embedder = Embedding(**embedding_params.__dict__)
         self.layer_norm = [
             (
-                LayerNorm(embedding_params.embedding_dimension_size),
-                LayerNorm(embedding_params.embedding_dimension_size),
+                nn.LayerNorm([embedding_params.embedding_dimension_size, embedding_params.max_sentence_size]),
+                nn.LayerNorm([embedding_params.embedding_dimension_size, embedding_params.max_sentence_size]),
+                # LayerNorm(embedding_params.embedding_dimension_size),
+                # LayerNorm(embedding_params.embedding_dimension_size),
             )
             for _ in range(num_layers)
         ]
@@ -81,17 +83,15 @@ class DTransformer(nn.Module):
             print(f"{x=}")
             print("a", x.shape)
             x = self.layer_norm[l][0](x)
-            print("b", x.shape)
+            print("b", x.shape, torch.any(x.isnan()))
             x += self.attention[l](x, x, mask=self.causal_mask)
-            print("c", x.shape)
+            print("c", x.shape, torch.any(x.isnan()))
             x = self.layer_norm[l][1](x)
-            print("d", x.shape)
+            print("d", x.shape, torch.any(x.isnan()))
             x += self.mlp[l][1](self.gelu(self.mlp[l][0](x.T))).T
-            print("e", x.shape)
+            print("e", x.shape, torch.any(x.isnan()))
 
-        print(x)
         x = self.final_layer_norm(x)
-        print(f"{x.shape=}")
         x = self.embedder.unembed(x)
         return nn.functional.softmax(x, dim=-1)
 
