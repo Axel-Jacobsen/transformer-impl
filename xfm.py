@@ -10,7 +10,6 @@ from typing import Optional
 from dataclasses import dataclass
 
 from embed import Embedding
-from layer_norm import LayerNorm
 from attention import MultiHeadAttention, generate_square_subsequent_mask
 
 torch.autograd.set_detect_anomaly(True)

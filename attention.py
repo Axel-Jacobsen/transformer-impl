@@ -86,7 +86,7 @@ class MultiHeadAttention(nn.Module):
 
         if mask is not None:
             assert mask.shape == s.shape, f"{mask.shape=} {s.shape=}, should be same"
-            s *= mask
+            s = s.masked_fill(mask == 0, float("-inf"))
 
         return torch.softmax(s, dim=-1) @ v
 
