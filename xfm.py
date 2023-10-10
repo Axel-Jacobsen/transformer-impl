@@ -144,10 +144,11 @@ if __name__ == "__main__":
         attention_params=attention_params,
     )
 
-    optimizer = torch.optim.Adam(transformer.parameters(), lr=0.001)
+    optimizer = torch.optim.Adam(transformer.parameters(), lr=0.03)
     criterion = nn.CrossEntropyLoss()
 
-    for i in range(100):
+    from tqdm import tqdm
+    for i in tqdm(range(1000)):
         optimizer.zero_grad()
         x = torch.stack([tokenize(next(seq)) for _ in range(CONTEXT_WINDOW)])
         y = torch.clone(x)
@@ -157,9 +158,12 @@ if __name__ == "__main__":
         loss = criterion(y_hat, y)
         loss.backward()
         optimizer.step()
-        print(loss.item())
+        tqdm.write(f"loss = {loss.item()}")
 
-    x = torch.stack([tokenize(next(seq)) for _ in range(CONTEXT_WINDOW)])
+    raw_sentence = [next(seq) for _ in range(CONTEXT_WINDOW)]
+    x = torch.stack([tokenize(c) for c in raw_sentence])
     transformer.eval()
     y_hat = transformer(x)
-    print("".join([detokenize(t) for t in x]))
+    print(y_hat)
+    print(raw_sentence)
+    print("".join([detokenize(t) for t in y_hat]))
