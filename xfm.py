@@ -12,8 +12,6 @@ from dataclasses import dataclass
 from embed import Embedding
 from attention import MultiHeadAttention, generate_square_subsequent_mask
 
-torch.autograd.set_detect_anomaly(True)
-
 
 @dataclass
 class EmbeddingParams:
@@ -109,7 +107,7 @@ if __name__ == "__main__":
 
     seq = cycle("aab")
 
-    CONTEXT_WINDOW = 4
+    CONTEXT_WINDOW = 16
     VOCAB_SIZE = 3
 
     def tokenize(char: str) -> torch.Tensor:
@@ -148,19 +146,19 @@ if __name__ == "__main__":
     optimizer = torch.optim.Adam(transformer.parameters(), lr=0.03)
     criterion = nn.CrossEntropyLoss()
 
-    for i in tqdm(range(100)):
+    pbar = tqdm(range(10000))
+    for i in pbar:
         optimizer.zero_grad()
         x = torch.stack([tokenize(next(seq)) for _ in range(CONTEXT_WINDOW)])
         y = torch.roll(x, shifts=-1, dims=0)
         y[-1] = tokenize(next(seq))
-        print(x, y)
 
         y_hat = transformer(x)
 
         loss = criterion(y_hat, y)
         loss.backward()
         optimizer.step()
-        tqdm.write(f"loss = {loss.item()}")
+        pbar.set_description(f"loss = {loss.item()}")
 
     transformer.eval()
 
@@ -168,7 +166,5 @@ if __name__ == "__main__":
     x = torch.stack([tokenize(c) for c in raw_sentence])
     y_hat = transformer(x)
 
-    print(y_hat)
-    print(raw_sentence)
-    print("".join([detokenize(t) for t in y_hat]))
-    print(y_hat)
+    print(f"input = {raw_sentence}")
+    print("output =", "".join([detokenize(t) for t in y_hat]))

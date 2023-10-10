@@ -23,21 +23,10 @@ class AttentionParams:
     num_heads: Optional[int] = None
 
 
-def generate_square_subsequent_mask(
-    sz: int,
-    device: torch.device = torch.device("cpu"),
-    dtype: torch.dtype = torch.get_default_dtype(),
-) -> torch.Tensor:
-    """Generate a square causal mask for the sequence.
-    The masked positions are filled with float('-inf').
-    Unmasked positions are filled with float(0.0).
-
-    directly from
-        https://pytorch.org/docs/stable/_modules/torch/nn/modules/transformer.html#Transformer.generate_square_subsequent_mask
-    """
-    return torch.triu(
-        torch.ones((sz, sz), device=device),
-        diagonal=1,
+def generate_square_subsequent_mask(sz: int) -> torch.Tensor:
+    mask = torch.triu(torch.ones(sz, sz)) == 1
+    return (
+        mask.float().masked_fill(mask == 0, 0.0).masked_fill(mask == 1, float("-inf"))
     )
 
 
@@ -63,18 +52,24 @@ class MultiHeadAttention(nn.Module):
 
         # w_embedding transposed compared to "formal algorithms" since we have
         # to apply the function differently
-        self._W_query = [
-            nn.Linear(embedding_dimension_size, attention_dimension_size)
-            for _ in range(num_heads)
-        ]
-        self._W_key = [
-            nn.Linear(embedding_dimension_size, attention_dimension_size)
-            for _ in range(num_heads)
-        ]
-        self._W_value = [
-            nn.Linear(embedding_dimension_size, mid_dimension_size)
-            for _ in range(num_heads)
-        ]
+        self._W_query = nn.ModuleList(
+            [
+                nn.Linear(embedding_dimension_size, attention_dimension_size)
+                for _ in range(num_heads)
+            ]
+        )
+        self._W_key = nn.ModuleList(
+            [
+                nn.Linear(embedding_dimension_size, attention_dimension_size)
+                for _ in range(num_heads)
+            ]
+        )
+        self._W_value = nn.ModuleList(
+            [
+                nn.Linear(embedding_dimension_size, mid_dimension_size)
+                for _ in range(num_heads)
+            ]
+        )
         # have to transpose this one too
         self._W0 = nn.Linear(num_heads * mid_dimension_size, self._out_dimension_size)
 
