@@ -18,7 +18,7 @@ class Embedding(nn.Module):
         self._W_embedding, self._W_positional, self._W_unembed = (
             nn.Linear(vocab_size, embedding_dimension_size, bias=False),
             nn.Linear(embedding_dimension_size, max_sentence_size, bias=False),
-            nn.Linear(vocab_size, embedding_dimension_size, bias=False),
+            nn.Linear(embedding_dimension_size, vocab_size, bias=False),
         )
 
     @property
