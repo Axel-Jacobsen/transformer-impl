@@ -94,9 +94,9 @@ class DTransformer(nn.Module):
         x = self.embedder(x)
         for n in range(self.num_layers):
             x = self.layer_norm[n][0](x)
-            x += self.attention[n](x, x, mask=self.causal_mask)
+            x = x + self.attention[n](x, x, mask=self.causal_mask)
             x = self.layer_norm[n][1](x)
-            x += self.mlp[n][1](self.gelu(self.mlp[n][0](x)))
+            x = x + self.mlp[n][1](self.gelu(self.mlp[n][0](x)))
 
         x = self.final_layer_norm(x)
         x = self.embedder.unembed(x)
@@ -157,7 +157,9 @@ if __name__ == "__main__":
         loss = criterion(y_hat, y)
         loss.backward()
         optimizer.step()
+        print(loss.item())
 
     x = torch.stack([tokenize(next(seq)) for _ in range(CONTEXT_WINDOW)])
     transformer.eval()
     y_hat = transformer(x)
+    print("".join([detokenize(t) for t in x]))

@@ -36,61 +36,9 @@ def generate_square_subsequent_mask(
         https://pytorch.org/docs/stable/_modules/torch/nn/modules/transformer.html#Transformer.generate_square_subsequent_mask
     """
     return torch.triu(
-        torch.full((sz, sz), float("-inf"), dtype=dtype, device=device),
+        torch.ones((sz, sz), device=device),
         diagonal=1,
     )
-
-
-class Attention(nn.Module):
-    def __init__(
-        self,
-        vocab_size: int,
-        max_sentence_size: int,
-        embedding_dimension_size: int,
-        attention_dimension_size: int,
-        out_dimension_size: int,
-    ) -> None:
-        super().__init__()
-        self._vocab_size = vocab_size
-        self._max_sentence_size = max_sentence_size
-        self._embedding_dimension_size = embedding_dimension_size
-        self._attention_dimension_size = attention_dimension_size
-        self._out_dimension_size = out_dimension_size
-
-        self._W_query = nn.Linear(embedding_dimension_size, attention_dimension_size)
-        self._W_key = nn.Linear(embedding_dimension_size, attention_dimension_size)
-        self._W_value = nn.Linear(out_dimension_size, embedding_dimension_size)
-
-    def basic_single_query_attention(
-        self, embedding: torch.Tensor, embedded_context: list[torch.Tensor]
-    ) -> torch.Tensor:
-        """very very basic attention"""
-        q = self._W_query(embedding)
-        k = torch.stack([self._W_key(t) for t in embedded_context])
-        v = torch.stack([self._W_value(t) for t in embedded_context])
-        s = q @ k.mT / self._attention_dimension_size ** (1 / 2)
-
-        alpha = torch.softmax(s, dim=-1)
-
-        return torch.matmul(alpha, v)
-
-    def attention(self, embedding, embedded_context, mask=None):
-        """Computes a single (masked) self- or cross- attention head
-
-        (from Formal Algorithms)
-        """
-        Q = self._W_query(embedding)
-        K = self._W_key(embedded_context)
-        V = self._W_value(embedded_context)
-        S = K.mT @ Q / self._attention_dimension_size ** (1 / 2)
-
-        if mask is not None:
-            assert mask.shape == S.shape, f"{mask.shape=} {S.shape=}, should be same"
-            S = S.masked_fill(mask, -1e9)
-        return V @ torch.softmax(S, dim=-1)
-
-    def forward(self, x, z, mask=None):
-        return self.attention(x, z, mask=mask)
 
 
 class MultiHeadAttention(nn.Module):
