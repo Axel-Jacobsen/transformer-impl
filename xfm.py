@@ -43,8 +43,18 @@ class DTransformer(nn.Module):
         self.embedder = Embedding(**embedding_params.__dict__)
         self.layer_norm = [
             (
-                nn.LayerNorm([embedding_params.embedding_dimension_size, embedding_params.max_sentence_size]),
-                nn.LayerNorm([embedding_params.embedding_dimension_size, embedding_params.max_sentence_size]),
+                nn.LayerNorm(
+                    [
+                        embedding_params.embedding_dimension_size,
+                        embedding_params.max_sentence_size,
+                    ]
+                ),
+                nn.LayerNorm(
+                    [
+                        embedding_params.embedding_dimension_size,
+                        embedding_params.max_sentence_size,
+                    ]
+                ),
                 # LayerNorm(embedding_params.embedding_dimension_size),
                 # LayerNorm(embedding_params.embedding_dimension_size),
             )
@@ -79,17 +89,11 @@ class DTransformer(nn.Module):
         ugly!
         """
         x = self.embedder(x)
-        for l in range(self.num_layers):
-            print(f"{x=}")
-            print("a", x.shape)
-            x = self.layer_norm[l][0](x)
-            print("b", x.shape, torch.any(x.isnan()))
-            x += self.attention[l](x, x, mask=self.causal_mask)
-            print("c", x.shape, torch.any(x.isnan()))
-            x = self.layer_norm[l][1](x)
-            print("d", x.shape, torch.any(x.isnan()))
-            x += self.mlp[l][1](self.gelu(self.mlp[l][0](x.T))).T
-            print("e", x.shape, torch.any(x.isnan()))
+        for n in range(self.num_layers):
+            x = self.layer_norm[n][0](x)
+            x += self.attention[n](x, x, mask=self.causal_mask)
+            x = self.layer_norm[n][1](x)
+            x += self.mlp[n][1](self.gelu(self.mlp[n][0](x.T))).T
 
         x = self.final_layer_norm(x)
         x = self.embedder.unembed(x)
@@ -145,15 +149,12 @@ if __name__ == "__main__":
         x = torch.stack([tokenize(next(seq)) for _ in range(CONTEXT_WINDOW)])
         y = torch.clone(x)
 
-        print(x.shape)
         y_hat = transformer(x)
-        print(y_hat, y)
+
         loss = criterion(y_hat.T, y)
         loss.backward()
         optimizer.step()
-        print(f"{i=} {loss.item()=}")
 
     x = torch.stack([tokenize(next(seq)) for _ in range(CONTEXT_WINDOW)])
     transformer.eval()
     y_hat = transformer(x)
-    print("".join([detokenize(y) for y in y_hat.argmax(dim=-1)]))

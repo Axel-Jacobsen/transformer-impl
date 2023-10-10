@@ -28,10 +28,12 @@ def generate_square_subsequent_mask(
     device: torch.device = torch.device("cpu"),
     dtype: torch.dtype = torch.get_default_dtype(),
 ) -> torch.Tensor:
-    """Generate a square causal mask for the sequence. The masked positions are filled with float('-inf').
+    """Generate a square causal mask for the sequence.
+    The masked positions are filled with float('-inf').
     Unmasked positions are filled with float(0.0).
 
-    directly from https://pytorch.org/docs/stable/_modules/torch/nn/modules/transformer.html#Transformer.generate_square_subsequent_mask
+    directly from
+        https://pytorch.org/docs/stable/_modules/torch/nn/modules/transformer.html#Transformer.generate_square_subsequent_mask
     """
     return torch.triu(
         torch.full((sz, sz), float("-inf"), dtype=dtype, device=device),
@@ -129,20 +131,15 @@ class MultiHeadAttention(nn.Module):
         self._W0 = nn.Linear(num_heads * mid_dimension_size, self._out_dimension_size)
 
     def _attention(self, embedding, embedded_context, Q, K, V, mask=None):
-        print("fuasd", torch.any(torch.isnan(embedding)))
         q = Q(embedding.T).T
         k = K(embedded_context.T).T
         v = V(embedded_context.T).T
         s = k.mT @ q / self._attention_dimension_size ** (1 / 2)
 
-        print("s", torch.any(torch.isnan(embedding)))
-
         if mask is not None:
             assert mask.shape == s.shape, f"{mask.shape=} {s.shape=}, should be same"
             s *= mask
-        print("after mask", torch.any(torch.isnan(embedding)))
 
-        print("aasdf", torch.any(torch.isnan(v @ torch.softmax(s, dim=-1))))
         return v @ torch.softmax(s, dim=-1)
 
     def multihead_attention(self, X, Z, mask=None):
