@@ -105,35 +105,21 @@ class DTransformer(nn.Module):
 if __name__ == "__main__":
     from itertools import cycle
 
-    seq = cycle("aab")
+    source_string = "aababbabac"
+    seq = cycle(source_string)
 
     CONTEXT_WINDOW = 16
-    VOCAB_SIZE = 3
+    VOCAB_SIZE = 4
+    EMBEDDING_DIMENSION_SIZE = 3
 
-    def tokenize(char: str) -> torch.Tensor:
-        if char == "a":
-            return torch.tensor(0)
-        elif char == "b":
-            return torch.tensor(1)
-        elif char == "<eos>":
-            return torch.tensor(2)
-        raise RuntimeError(f"can't tokenize {char=}")
-
-    def detokenize(tensor: torch.Tensor) -> str:
-        if tensor.argmax() == 0:
-            return "a"
-        elif tensor.argmax() == 1:
-            return "b"
-        elif tensor.argmax() == 2:
-            return "<eos>"
-        raise RuntimeError(f"can't detokenize {tensor=}")
-
-    embedding_params = EmbeddingParams(VOCAB_SIZE, CONTEXT_WINDOW, 3)
+    embedding_params = EmbeddingParams(
+        VOCAB_SIZE, CONTEXT_WINDOW, EMBEDDING_DIMENSION_SIZE
+    )
     attention_params = MultiHeadAttentionParams(
-        attention_dimension_size=4,
-        mid_dimension_size=5,
-        out_dimension_size=3,
-        num_heads=2,
+        attention_dimension_size=16,
+        mid_dimension_size=16,
+        out_dimension_size=EMBEDDING_DIMENSION_SIZE,
+        num_heads=4,
     )
 
     transformer = DTransformer(
@@ -143,7 +129,29 @@ if __name__ == "__main__":
         attention_params=attention_params,
     )
 
-    optimizer = torch.optim.Adam(transformer.parameters(), lr=0.03)
+    def tokenize(char: str) -> torch.Tensor:
+        if char == "a":
+            return torch.tensor(0)
+        elif char == "b":
+            return torch.tensor(1)
+        elif char == "c":
+            return torch.tensor(2)
+        elif char == "<eos>":
+            return torch.tensor(3)
+        raise RuntimeError(f"can't tokenize {char=}")
+
+    def detokenize(tensor: torch.Tensor) -> str:
+        if tensor.argmax() == 0:
+            return "a"
+        elif tensor.argmax() == 1:
+            return "b"
+        elif tensor.argmax() == 2:
+            return "c"
+        elif tensor.argmax() == 3:
+            return "<eos>"
+        raise RuntimeError(f"can't detokenize {tensor=}")
+
+    optimizer = torch.optim.Adam(transformer.parameters(), lr=0.003)
     criterion = nn.CrossEntropyLoss()
 
     pbar = tqdm(range(10000))
@@ -166,5 +174,6 @@ if __name__ == "__main__":
     x = torch.stack([tokenize(c) for c in raw_sentence])
     y_hat = transformer(x)
 
-    print(f"input = {raw_sentence}")
+    print("source =", source_string)
+    print(f"input = {''.join(raw_sentence)}")
     print("output =", "".join([detokenize(t) for t in y_hat]))
