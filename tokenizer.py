@@ -29,7 +29,7 @@ class Tokenizer(Dataset):
             }
         )
         self._data = raw_text.lower().split("\n")
-        self._max_len = max(len(line) for line in self._data)
+        self._max_len = max(len(line) for line in self._data) + 2
 
     def __repr__(self) -> str:
         return f"Tokenizer(tokens={''.join(self._tokens)})"
@@ -63,7 +63,8 @@ class Tokenizer(Dataset):
         end of the actual data, and an <eos> token at the end of the
         sequence.
         """
-        data = [self._token2idx[t] for t in self._data[idx]]
+        data = [self._token2idx["<bos>"]]
+        data += [self._token2idx[t] for t in self._data[idx]]
         data += [self._token2idx["<eos>"]]
         if pad:
             data += [self._token2idx["<pad>"]] * (self._max_len - len(self._data[idx]))
