@@ -109,7 +109,7 @@ if __name__ == "__main__":
 
     seq = cycle("aab")
 
-    CONTEXT_WINDOW = 10
+    CONTEXT_WINDOW = 4
     VOCAB_SIZE = 3
 
     def tokenize(char: str) -> torch.Tensor:
@@ -151,7 +151,9 @@ if __name__ == "__main__":
     for i in tqdm(range(100)):
         optimizer.zero_grad()
         x = torch.stack([tokenize(next(seq)) for _ in range(CONTEXT_WINDOW)])
-        y = torch.clone(x)
+        y = torch.roll(x, shifts=-1, dims=0)
+        y[-1] = tokenize(next(seq))
+        print(x, y)
 
         y_hat = transformer(x)
 
@@ -160,10 +162,12 @@ if __name__ == "__main__":
         optimizer.step()
         tqdm.write(f"loss = {loss.item()}")
 
+    transformer.eval()
+
     raw_sentence = [next(seq) for _ in range(CONTEXT_WINDOW)]
     x = torch.stack([tokenize(c) for c in raw_sentence])
-    transformer.eval()
     y_hat = transformer(x)
+
     print(y_hat)
     print(raw_sentence)
     print("".join([detokenize(t) for t in y_hat]))
