@@ -50,4 +50,4 @@ if __name__ == "__main__":
             optimizer.step()
 
             if global_step % 100 == 0:
-                print(f"step: {global_step}, Loss: {loss.item()}")
+                print(f"step: {global_step} epoch: {epoch} loss: {loss.item()}")
