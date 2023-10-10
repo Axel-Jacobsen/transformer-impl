@@ -45,18 +45,16 @@ class DTransformer(nn.Module):
             (
                 nn.LayerNorm(
                     [
-                        embedding_params.embedding_dimension_size,
                         embedding_params.max_sentence_size,
+                        embedding_params.embedding_dimension_size,
                     ]
                 ),
                 nn.LayerNorm(
                     [
-                        embedding_params.embedding_dimension_size,
                         embedding_params.max_sentence_size,
+                        embedding_params.embedding_dimension_size,
                     ]
                 ),
-                # LayerNorm(embedding_params.embedding_dimension_size),
-                # LayerNorm(embedding_params.embedding_dimension_size),
             )
             for _ in range(num_layers)
         ]
