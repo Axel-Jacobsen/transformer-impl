@@ -18,7 +18,7 @@ class Embedding(nn.Module):
         self._W_embedding, self._W_positional, self._W_unembed = (
             nn.Linear(vocab_size, embedding_dimension_size, bias=False),
             nn.Linear(embedding_dimension_size, max_sentence_size, bias=False),
-            nn.Linear(embedding_dimension_size, vocab_size, bias=False),
+            nn.Linear(vocab_size, embedding_dimension_size, bias=False),
         )
 
     @property
@@ -50,11 +50,11 @@ class Embedding(nn.Module):
 
     def embed(self, tokens: torch.Tensor) -> torch.Tensor:
         """Embed a sequence of tokens"""
-        return (self.token_embedding(tokens) + self.positional_embedding()).T
+        return self.token_embedding(tokens) + self.positional_embedding()
 
     def unembed(self, embedded_tokens: torch.Tensor) -> torch.Tensor:
         """Unembed a sequence of tokens"""
-        return self._W_unembed.weight @ embedded_tokens
+        return self._W_unembed(embedded_tokens)
 
-    def forward(self, tokens: torch.tensor) -> torch.Tensor:
+    def forward(self, tokens: torch.Tensor) -> torch.Tensor:
         return self.embed(tokens)
