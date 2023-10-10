@@ -4,7 +4,6 @@ import torch
 
 from torch import nn
 
-
 from typing import Optional
 from dataclasses import dataclass
 
@@ -23,7 +22,7 @@ class EmbeddingParams:
 class MultiHeadAttentionParams:
     attention_dimension_size: int
     mid_dimension_size: int
-    out_dimension_size: int  # just hte embedding dim???
+    out_dimension_size: int  # just the embedding dim?
     num_heads: Optional[int] = None
 
 
