@@ -58,7 +58,12 @@ class DTransformer(nn.Module):
             )
             for _ in range(num_layers)
         ]
-        self.final_layer_norm = LayerNorm(embedding_params.embedding_dimension_size)
+        self.final_layer_norm = nn.LayerNorm(
+            [
+                embedding_params.max_sentence_size,
+                embedding_params.embedding_dimension_size,
+            ]
+        )
         self.attention = [
             MultiHeadAttention(
                 **attention_params.__dict__,
@@ -91,7 +96,7 @@ class DTransformer(nn.Module):
             x = self.layer_norm[n][0](x)
             x += self.attention[n](x, x, mask=self.causal_mask)
             x = self.layer_norm[n][1](x)
-            x += self.mlp[n][1](self.gelu(self.mlp[n][0](x.T))).T
+            x += self.mlp[n][1](self.gelu(self.mlp[n][0](x)))
 
         x = self.final_layer_norm(x)
         x = self.embedder.unembed(x)
@@ -149,7 +154,7 @@ if __name__ == "__main__":
 
         y_hat = transformer(x)
 
-        loss = criterion(y_hat.T, y)
+        loss = criterion(y_hat, y)
         loss.backward()
         optimizer.step()
 

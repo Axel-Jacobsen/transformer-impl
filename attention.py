@@ -131,16 +131,16 @@ class MultiHeadAttention(nn.Module):
         self._W0 = nn.Linear(num_heads * mid_dimension_size, self._out_dimension_size)
 
     def _attention(self, embedding, embedded_context, Q, K, V, mask=None):
-        q = Q(embedding.T).T
-        k = K(embedded_context.T).T
-        v = V(embedded_context.T).T
-        s = k.mT @ q / self._attention_dimension_size ** (1 / 2)
+        q = Q(embedding)
+        k = K(embedded_context)
+        v = V(embedded_context)
+        s = q @ k.T / self._attention_dimension_size ** (1 / 2)
 
         if mask is not None:
             assert mask.shape == s.shape, f"{mask.shape=} {s.shape=}, should be same"
             s *= mask
 
-        return v @ torch.softmax(s, dim=-1)
+        return torch.softmax(s, dim=-1) @ v
 
     def multihead_attention(self, X, Z, mask=None):
         return self._W0(
