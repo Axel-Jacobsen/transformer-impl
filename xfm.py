@@ -4,6 +4,8 @@ import torch
 
 from torch import nn
 
+from tqdm import tqdm
+
 from typing import Optional
 from dataclasses import dataclass
 
@@ -147,8 +149,7 @@ if __name__ == "__main__":
     optimizer = torch.optim.Adam(transformer.parameters(), lr=0.03)
     criterion = nn.CrossEntropyLoss()
 
-    from tqdm import tqdm
-    for i in tqdm(range(1000)):
+    for i in tqdm(range(100)):
         optimizer.zero_grad()
         x = torch.stack([tokenize(next(seq)) for _ in range(CONTEXT_WINDOW)])
         y = torch.clone(x)
@@ -167,3 +168,4 @@ if __name__ == "__main__":
     print(y_hat)
     print(raw_sentence)
     print("".join([detokenize(t) for t in y_hat]))
+    print(y_hat)
