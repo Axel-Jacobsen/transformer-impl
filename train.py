@@ -5,9 +5,7 @@ import torch
 from torch import nn
 
 from pathlib import Path
-from typing import Optional
 
-from embed import Embedding
 from tokenizer import Tokenizer
 from dtransformer import DTransformer, EmbeddingParams, MultiHeadAttentionParams
 
@@ -29,8 +27,8 @@ if __name__ == "__main__":
     )
 
     transformer = DTransformer(
-        num_layers = 2,
-        mlp_dim_size = 256,
+        num_layers=2,
+        mlp_dim_size=256,
         embedding_params=embedding_params,
         attention_params=multi_head_attention_params,
     )
@@ -40,8 +38,7 @@ if __name__ == "__main__":
 
     global_step = 0
     for epoch in range(100):
-
-        for (x, y) in t:
+        for x, y in t:
             global_step += 1
 
             optimizer.zero_grad()
