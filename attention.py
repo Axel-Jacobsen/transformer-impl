@@ -156,9 +156,9 @@ class MultiHeadAttention(nn.Module):
                     )
                     for h in range(self._num_heads)
                 ],
-                dim=0,
+                dim=1,
             )
-        ).T
+        )
 
     def forward(self, x, z, mask=None):
         return self.multihead_attention(x, z, mask=mask)
