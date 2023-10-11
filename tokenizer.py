@@ -10,7 +10,7 @@ from pathlib import Path
 """
 
 
-class Tokenizer(Dataset):
+class NotGoodDatasetTokenizer(Dataset):
     def __init__(self, data_path: Path, pad: bool = False) -> None:
         with open(data_path, "r") as f:
             raw_text = f.read()

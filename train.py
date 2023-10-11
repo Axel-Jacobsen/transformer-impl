@@ -1,21 +1,25 @@
 #! /usr/bin/env python3
 
+import time
+
 import torch
 
 from torch import nn
 
 from pathlib import Path
 
-from tokenizer import Tokenizer
+from tokenizer import NotGoodDatasetTokenizer
 from dtransformer import DTransformer, EmbeddingParams, MultiHeadAttentionParams
 
 
-if __name__ == "__main__":
-    t = Tokenizer(Path("canterbury_tales.txt"))
+def train():
+    dset = NotGoodDatasetTokenizer(Path("canterbury_tales.txt"))
+
+    device = torch.device("mps")
 
     embedding_params = EmbeddingParams(
-        vocab_size=t.vocab_size(),
-        max_sentence_size=t.max_size(),
+        vocab_size=dset.vocab_size(),
+        max_sentence_size=dset.max_size(),
         embedding_dimension_size=256,
     )
 
@@ -31,15 +35,17 @@ if __name__ == "__main__":
         mlp_dim_size=256,
         embedding_params=embedding_params,
         attention_params=multi_head_attention_params,
-    )
+    ).to(device)
 
     optimizer = torch.optim.Adam(transformer.parameters(), lr=0.001)
     criterion = nn.CrossEntropyLoss()
 
-    global_step = 0
+    global_step = 1
+    t0 = time.perf_counter()
     for epoch in range(100):
-        for x, y in t:
-            global_step += 1
+        for x, y in dset:
+            x = x.to(device)
+            y = y.to(device)
 
             optimizer.zero_grad()
 
@@ -50,4 +56,13 @@ if __name__ == "__main__":
             optimizer.step()
 
             if global_step % 100 == 0:
-                print(f"step: {global_step} epoch: {epoch} loss: {loss.item()}")
+                print(
+                    f"step: {global_step} epoch: {epoch} loss: {loss.item()} "
+                    f"steps per second: {global_step / (time.perf_counter() - t0):.3f}"
+                )
+
+            global_step += 1
+
+
+if __name__ == "__main__":
+    train()
