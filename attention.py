@@ -72,8 +72,7 @@ class MultiHeadAttention(nn.Module):
                 for _ in range(num_heads)
             ]
         )
-        # have to transpose this one too
-        self._W0 = nn.Linear(num_heads * mid_dimension_size, self._out_dimension_size)
+        self._W0 = nn.Linear(num_heads * mid_dimension_size, out_dimension_size)
 
     def _attention(self, embedding, embedded_context, Q, K, V, mask=None):
         q = Q(embedding)
