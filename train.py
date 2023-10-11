@@ -15,7 +15,7 @@ from dtransformer import DTransformer, EmbeddingParams, MultiHeadAttentionParams
 def train():
     dset = NotGoodDatasetTokenizer(Path("canterbury_tales.txt"))
 
-    device = torch.device("mps")
+    device = torch.device("cpu")
 
     embedding_params = EmbeddingParams(
         vocab_size=dset.vocab_size(),
@@ -38,14 +38,14 @@ def train():
     ).to(device)
 
     optimizer = torch.optim.Adam(transformer.parameters(), lr=0.001)
-    criterion = nn.CrossEntropyLoss()
+    criterion = nn.CrossEntropyLoss().to(device)
 
     global_step = 1
     t0 = time.perf_counter()
     for epoch in range(100):
         for x, y in dset:
-            x = x.to(device)
-            y = y.to(device)
+            x = x.to(device, non_blocking=True)
+            y = y.to(device, non_blocking=True)
 
             optimizer.zero_grad()
 
