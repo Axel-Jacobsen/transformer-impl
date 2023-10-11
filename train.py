@@ -20,24 +20,24 @@ def train():
     embedding_params = EmbeddingParams(
         vocab_size=dset.vocab_size(),
         max_sentence_size=dset.max_size(),
-        embedding_dimension_size=256,
+        embedding_dimension_size=64,
     )
 
     multi_head_attention_params = MultiHeadAttentionParams(
         attention_dimension_size=64,
-        mid_dimension_size=256,
+        mid_dimension_size=64,
         out_dimension_size=embedding_params.embedding_dimension_size,
         num_heads=4,
     )
 
     transformer = DTransformer(
-        num_layers=2,
-        mlp_dim_size=256,
+        num_layers=4,
+        mlp_dim_size=64,
         embedding_params=embedding_params,
         attention_params=multi_head_attention_params,
     ).to(device)
 
-    optimizer = torch.optim.Adam(transformer.parameters(), lr=0.001)
+    optimizer = torch.optim.Adam(transformer.parameters(), lr=0.003)
     criterion = nn.CrossEntropyLoss().to(device)
 
     global_step = 1
@@ -62,6 +62,7 @@ def train():
                 )
 
             global_step += 1
+    torch.save(transformer.state_dict(), "transformer.pth")
 
 
 if __name__ == "__main__":
