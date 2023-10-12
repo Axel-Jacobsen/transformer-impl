@@ -65,3 +65,12 @@ class NotGoodDatasetTokenizer(Dataset):
 
     def max_size(self) -> int:
         return self._max_len
+
+    @staticmethod
+    def collate_fn(batch):
+        xs, ys = zip(*batch)
+
+        xs = torch.nn.utils.rnn.pad_sequence(xs, batch_first=True)
+        ys = torch.nn.utils.rnn.pad_sequence(ys, batch_first=True)
+
+        return xs, ys
