@@ -57,7 +57,6 @@ class DTransformerLayer(nn.Module):
         x = self.layer_norm_1(x)
         x = x + self.attention(x, x, mask=causal_mask)
         x = self.layer_norm_2(x)
-        print(self.gelu(self.mlp_1(x)).shape)
         x = x + self.mlp_2(self.gelu(self.mlp_1(x)))
         x = self.layer_norm_3(x)
 
