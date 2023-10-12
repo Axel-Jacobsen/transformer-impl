@@ -39,11 +39,10 @@ class DTransformerLayer(nn.Module):
         self.layer_norm_2 = nn.LayerNorm(embedding_params.embedding_dimension_size)
         self.layer_norm_3 = nn.LayerNorm(embedding_params.embedding_dimension_size)
         self.attention = MultiHeadAttention(
-            **attention_params.__dict__,
-            **embedding_params.__dict__,
+            **attention_params.__dict__, **embedding_params.__dict__,
         )
         self.mlp_1 = nn.Linear(embedding_params.embedding_dimension_size, mlp_dim_size)
-        self.mlp_2 = nn.Linear(mlp_dim_size, embedding_params.embedding_dimension_size)
+        self.mlp_2 = nn.Linear(mlp_dim_size, embedding_params.vocab_size)
         self.gelu = nn.GELU()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -52,12 +51,13 @@ class DTransformerLayer(nn.Module):
         x is a batch of sequences of tokens
         returns a batch of sequences of embeddings
         """
-        sentence_len, embedding_dim = x.shape
+        _, sentence_len, _ = x.shape
         causal_mask = generate_square_subsequent_mask(sentence_len, device=x.device)
 
         x = self.layer_norm_1(x)
         x = x + self.attention(x, x, mask=causal_mask)
         x = self.layer_norm_2(x)
+        print(self.gelu(self.mlp_1(x)).shape)
         x = x + self.mlp_2(self.gelu(self.mlp_1(x)))
         x = self.layer_norm_3(x)
 

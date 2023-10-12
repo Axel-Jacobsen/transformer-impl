@@ -56,7 +56,8 @@ def train():
             optimizer.zero_grad()
 
             y_hat = transformer(x)
-            loss = criterion(y_hat, y)
+            print(f"{y_hat.permute((0,2,1)).shape=}, {y.shape=}")
+            loss = criterion(y_hat.permute((0, 2, 1)), y)
 
             loss.backward()
             optimizer.step()

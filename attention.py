@@ -78,10 +78,9 @@ class MultiHeadAttention(nn.Module):
         q = Q(embedding)
         k = K(embedded_context)
         v = V(embedded_context)
-        s = q @ k.T / self._attention_dimension_size ** (1 / 2)
+        s = q @ k.mT / self._attention_dimension_size ** (1 / 2)
 
         if mask is not None:
-            assert mask.shape == s.shape, f"{mask.shape=} {s.shape=}, should be same"
             s = s.masked_fill(mask == 0, float("-inf"))
 
         return torch.softmax(s, dim=-1) @ v
@@ -100,7 +99,7 @@ class MultiHeadAttention(nn.Module):
                     )
                     for h in range(self._num_heads)
                 ],
-                dim=1,
+                dim=-1,
             )
         )
 
