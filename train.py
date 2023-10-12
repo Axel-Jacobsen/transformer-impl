@@ -26,19 +26,19 @@ def train():
     embedding_params = EmbeddingParams(
         vocab_size=train_dloader.dataset.vocab_size(),
         max_sentence_size=train_dloader.dataset.max_size(),
-        embedding_dimension_size=64,
+        embedding_dimension_size=16,
     )
 
     multi_head_attention_params = MultiHeadAttentionParams(
-        attention_dimension_size=64,
-        mid_dimension_size=64,
+        attention_dimension_size=16,
+        mid_dimension_size=16,
         out_dimension_size=embedding_params.embedding_dimension_size,
         num_heads=4,
     )
 
     transformer = DTransformer(
         num_layers=4,
-        mlp_dim_size=64,
+        mlp_dim_size=16,
         embedding_params=embedding_params,
         attention_params=multi_head_attention_params,
     ).to(device)
