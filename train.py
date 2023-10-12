@@ -5,21 +5,27 @@ import time
 import torch
 
 from torch import nn
+from torch.utils.data import DataLoader
 
 from pathlib import Path
 
-from tokenizer import NotGoodDatasetTokenizer
+from data import NotGoodDatasetTokenizer
 from dtransformer import DTransformer, EmbeddingParams, MultiHeadAttentionParams
 
 
-def train():
+def give_me_a_dataloader():
     dset = NotGoodDatasetTokenizer(Path("canterbury_tales.txt"))
+    return DataLoader(dset, batch_size=32, shuffle=True, collate_fn=dset.collate_fn)
+
+
+def train():
+    train_dloader = give_me_a_dataloader()
 
     device = torch.device("cpu")
 
     embedding_params = EmbeddingParams(
-        vocab_size=dset.vocab_size(),
-        max_sentence_size=dset.max_size(),
+        vocab_size=train_dloader.dataset.vocab_size(),
+        max_sentence_size=train_dloader.dataset.max_size(),
         embedding_dimension_size=64,
     )
 
@@ -43,7 +49,7 @@ def train():
     global_step = 1
     t0 = time.perf_counter()
     for epoch in range(100):
-        for x, y in dset:
+        for x, y in train_dloader:
             x = x.to(device, non_blocking=True)
             y = y.to(device, non_blocking=True)
 
