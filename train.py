@@ -21,7 +21,7 @@ def give_me_a_dataloader():
 def train():
     train_dloader = give_me_a_dataloader()
 
-    device = torch.device("cpu")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     embedding_params = EmbeddingParams(
         vocab_size=train_dloader.dataset.vocab_size(),
@@ -56,7 +56,6 @@ def train():
             optimizer.zero_grad()
 
             y_hat = transformer(x)
-            print(f"{y_hat.permute((0,2,1)).shape=}, {y.shape=}")
             loss = criterion(y_hat.permute((0, 2, 1)), y)
 
             loss.backward()

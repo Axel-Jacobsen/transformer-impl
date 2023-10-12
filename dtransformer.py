@@ -82,7 +82,9 @@ class DTransformer(nn.Module):
                 for _ in range(num_layers)
             ]
         )
-        self.final_linear = nn.Linear(embedding_params.embedding_dimension_size, embedding_params.vocab_size)
+        self.final_linear = nn.Linear(
+            embedding_params.embedding_dimension_size, embedding_params.vocab_size
+        )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """x: (batch_size, max_sentence_size)
