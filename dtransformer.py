@@ -42,7 +42,7 @@ class DTransformerLayer(nn.Module):
             **attention_params.__dict__, **embedding_params.__dict__,
         )
         self.mlp_1 = nn.Linear(embedding_params.embedding_dimension_size, mlp_dim_size)
-        self.mlp_2 = nn.Linear(mlp_dim_size, embedding_params.vocab_size)
+        self.mlp_2 = nn.Linear(mlp_dim_size, embedding_params.embedding_dimension_size)
         self.gelu = nn.GELU()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -82,6 +82,7 @@ class DTransformer(nn.Module):
                 for _ in range(num_layers)
             ]
         )
+        self.final_linear = nn.Linear(embedding_params.embedding_dimension_size, embedding_params.vocab_size)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """x: (batch_size, max_sentence_size)
@@ -91,6 +92,8 @@ class DTransformer(nn.Module):
         """
         x = self.embedder(x)
         x = self.model(x)
-        if self.training:
+        x = self.final_linear(x)
+
+        if not self.training:
             return nn.functional.softmax(x, dim=-1)
         return x
