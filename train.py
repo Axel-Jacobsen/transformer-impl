@@ -68,7 +68,7 @@ def train():
                 )
 
             global_step += 1
-    torch.save(transformer.state_dict(), "transformer.pth")
+            torch.save(transformer.state_dict(), "latest.pth")
 
 
 if __name__ == "__main__":
