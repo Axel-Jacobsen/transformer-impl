@@ -13,7 +13,7 @@ from pathlib import Path
 class NotGoodDatasetTokenizer(Dataset):
     def __init__(self, data_path: Path, pad: bool = False) -> None:
         with open(data_path, "r") as f:
-            raw_text = f.read()
+            raw_text = f.read().lower()
             raw_tokens = sorted(list(set(raw_text)))
 
         self._pad = pad
@@ -27,7 +27,7 @@ class NotGoodDatasetTokenizer(Dataset):
                 "<pad>": len(raw_tokens) + 3,
             }
         )
-        self._data = raw_text.lower().split("\n")
+        self._data = raw_text.split("\n")
         self._max_len = max(len(line) for line in self._data) + 2
 
     def __repr__(self) -> str:
