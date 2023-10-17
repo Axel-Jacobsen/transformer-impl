@@ -27,7 +27,8 @@ class NotGoodDatasetTokenizer(Dataset):
                 "<pad>": len(raw_tokens) + 3,
             }
         )
-        self._data = raw_text.split("\n")
+        self._idx2token = {idx: token for token, idx in self._token2idx.items()}
+        self._data = raw_text.lower().split("\n")
         self._max_len = max(len(line) for line in self._data) + 2
 
     def __repr__(self) -> str:
@@ -48,6 +49,17 @@ class NotGoodDatasetTokenizer(Dataset):
         target_seq = torch.tensor(data[1:])
 
         return input_seq, target_seq
+
+    def tokenize(self, text: str) -> list[int]:
+        tokens = [self._token2idx["<bos>"]]
+        tokens += [self._token2idx[t] for t in text]
+        tokens += [self._token2idx["<eos>"]]
+        return tokens
+
+    def detokenize(self, tokens: list[int]) -> str:
+        if isinstance(tokens, torch.Tensor):
+            tokens = tokens.squeeze().tolist()
+        return "".join([self._idx2token[t] for t in tokens])
 
     @property
     def pad(self) -> bool:
