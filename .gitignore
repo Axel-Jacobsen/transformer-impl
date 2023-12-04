@@ -1,4 +1,4 @@
-transformer.pth
 __pycache__
 slurm-outputs
 submit_cmd_gpu.sh
+*.pth
