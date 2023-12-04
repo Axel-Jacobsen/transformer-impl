@@ -1,5 +1,3 @@
-#! /usr/bin/env python3
-
 import torch
 
 from torch import nn
@@ -21,15 +19,6 @@ class AttentionParams:
     mid_dimension_size: int
     out_dim_size: int
     num_heads: Optional[int] = None
-
-
-def generate_square_subsequent_mask(
-    sz: int, device: torch.device = torch.device("cpu")
-) -> torch.Tensor:
-    mask = torch.triu(torch.ones(sz, sz, device=device)) == 1
-    return (
-        mask.float().masked_fill(mask == 0, 0.0).masked_fill(mask == 1, float("-inf"))
-    )
 
 
 class MultiHeadAttention(nn.Module):

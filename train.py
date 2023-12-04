@@ -9,12 +9,12 @@ from torch.utils.data import DataLoader
 
 from pathlib import Path
 
-from data import NotGoodDatasetTokenizer
+from data import PerLineDataset
 from dtransformer import DTransformer, EmbeddingParams, MultiHeadAttentionParams
 
 
 def give_me_a_dataloader():
-    dset = NotGoodDatasetTokenizer(Path("canterbury_tales.txt"))
+    dset = PerLineDataset(Path("canterbury_tales.txt"))
     return DataLoader(dset, batch_size=32, shuffle=True, collate_fn=dset.collate_fn)
 
 
