@@ -39,7 +39,8 @@ class DTransformerLayer(nn.Module):
         self.layer_norm_2 = nn.LayerNorm(embedding_params.embedding_dimension_size)
         self.layer_norm_3 = nn.LayerNorm(embedding_params.embedding_dimension_size)
         self.attention = MultiHeadAttention(
-            **attention_params.__dict__, **embedding_params.__dict__,
+            **attention_params.__dict__,
+            **embedding_params.__dict__,
         )
         self.mlp_1 = nn.Linear(embedding_params.embedding_dimension_size, mlp_dim_size)
         self.mlp_2 = nn.Linear(mlp_dim_size, embedding_params.embedding_dimension_size)
